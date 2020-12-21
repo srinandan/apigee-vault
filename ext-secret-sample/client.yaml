@@ -1,0 +1,97 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+---
+apiVersion: 'kubernetes-client.io/v1'
+kind: ExternalSecret
+metadata:
+  # this will be the name of the Kubernetes Secret
+  name: apigee-secret
+spec:
+  backendType: vault
+  # Your authentication mount point, e.g. "kubernetes"
+  vaultMountPoint: kubernetes
+  # The vault role that will be used to fetch the secrets
+  vaultRole: apigee-role
+  kvVersion: 2
+  data:
+  - name: kmsEncryptionKey
+    # The full path of the secret to read. NOTE: always add 'secret/data' to tell the client
+    # to use v2 APIs
+    key: secret/data/srinandans-hybrid/prod1
+    property: kmsEncryptionKey
+  - name: cacheEncryptionKey
+    # The full path of the secret to read
+    key: secret/data/srinandans-hybrid/prod1
+    property: cacheEncryptionKey
+  - name: envKvmEncryptionKey
+    # The full path of the secret to read
+    key: secret/data/srinandans-hybrid/prod1
+    property: envKvmEncryptionKey
+  - name: kvmEncryptionKey
+    # The full path of the secret to read
+    key: secret/data/srinandans-hybrid/prod1
+    property: kvmEncryptionKey
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-ext-secret
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apigee-demo
+  template:
+    metadata:        
+      labels:
+        app: apigee-demo
+    spec:
+      serviceAccountName: apigee
+      initContainers:
+        # this init container wait for a few seconds for the secret to be provisioned
+        - name: wait-for-secrets
+          image: busybox
+          command: ["/bin/sh", "-c", "sleep 5"]      
+      containers:
+      - image: gcr.io/nandanks-151422/client@sha256:4d17010e94ee17f7bb3010f4f9fcc59e9ed55fc913d61d6043b41d4f330b66e0
+        imagePullPolicy: Always
+        name: client
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 50m
+            memory: 128Mi
+        env:
+          - name: SRINANDANS_HYBRID_KMS_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                key: kmsEncryptionKey
+                name: apigee-secret
+          - name: SRINANDANS_HYBRID_KVM_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                key: kvmEncryptionKey
+                name: apigee-secret
+          - name: SRINANDANS_HYBRID_PROD1_KVM_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                key: envKvmEncryptionKey
+                name: apigee-secret
+          - name: SRINANDANS_HYBRID_PROD1_CACHE_ENCRYPTION_KEY
+            valueFrom:
+              secretKeyRef:
+                key: cacheEncryptionKey
+                name: apigee-secret

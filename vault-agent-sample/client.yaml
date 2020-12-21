@@ -1,0 +1,68 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: apigee
+  labels:
+    app: apigee-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: apigee-demo
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "apigee-role"
+        # setting this annotation so that the init container can execute the sh file
+        vault.hashicorp.com/agent-init-first: "true"
+        # the name 'prod1' should match the last leaf in the secret
+        vault.hashicorp.com/agent-inject-secret-prod1: "secret/srinandans-hybrid/prod1"
+        # Environment variable export template
+        # the name 'prod1' should match the last leaf in the secret
+        vault.hashicorp.com/agent-inject-template-prod1: |
+          {{- with secret "secret/srinandans-hybrid/prod1?version=3" }}
+            export {{ .Data.data.org }}_KMS_ENCRYPTION_KEY="{{ .Data.data.kmsEncryptionKey }}"
+            export {{ .Data.data.org }}_KVM_ENCRYPTION_KEY="{{ .Data.data.kvmEncryptionKey }}"
+            export {{ .Data.data.org }}_{{ .Data.data.env }}_CACHE_ENCRYPTION_KEY="{{ .Data.data.cacheEncryptionKey }}"
+            export {{ .Data.data.org }}_{{ .Data.data.env }}_KVM_ENCRYPTION_KEY="{{ .Data.data.envKvmEncryptionKey }}"
+          {{- end }}        
+      labels:
+        app: apigee-demo
+    spec:
+      serviceAccountName: apigee
+      # vault actually doesn't create environment variables. the template above creates a sh file with variables
+      # that file needs to be executed for the environments variables to be availale
+      initContainers:
+        - name: init-env-vars
+          image: busybox
+          command: ["/bin/sh", "-c", "source /vault/secrets/*"]
+      containers:
+      - image: gcr.io/nandanks-151422/client@sha256:4d17010e94ee17f7bb3010f4f9fcc59e9ed55fc913d61d6043b41d4f330b66e0
+        imagePullPolicy: Always
+        name: client
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 50m
+            memory: 128Mi
