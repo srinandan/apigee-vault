@@ -5,13 +5,13 @@ data "google_client_config" "current" {}
 # This file contains all the interactions with Kubernetes
 provider "kubernetes" {
   load_config_file = false
-  host             = "https://${data.google_container_cluster.vault.endpoint}"
+  host             = "https://${google_container_cluster.vault.endpoint}"
 
   cluster_ca_certificate = base64decode(
     google_container_cluster.vault.master_auth[0].cluster_ca_certificate,
   )
   token = data.google_client_config.current.access_token
-   #config_context = ""
+  #config_context = ""
 }
 
 # Create a ConfigMap to store all the details for Vault to bootup 
@@ -106,7 +106,7 @@ resource "kubernetes_stateful_set" "vault" {
   spec {
     service_name = "vault"
 
-    replias      = var.kubernetes_min_nodes
+    replicas      = var.kubernetes_min_nodes
 
     selector {
       match_labels = {
