@@ -12,4 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kubectl creat configmap vault --from-literal api-addr=https://${VAULT_LOAD_BALANCER_IP}:8200 --from-literal gcs-bucket-name=${GCS_BUCKET_NAME} --from-literal kms-key-id=${KMS_KEY_ID} --from-literal project-id=${PROJECT_ID} --from-literal key-ring=${KEY_RING} --from-literal region=${REGION} --from-literal crypto-key=${CRYPTO_KEY}
+kubectl creat configmap vault --from-literal api-addr=http://${VAULT_LOAD_BALANCER_IP}:8200 --from-literal gcs-bucket-name=${GCS_BUCKET_NAME} --from-literal kms-key-id=${KMS_KEY_ID} --from-literal project-id=${PROJECT_ID} --from-literal key-ring=${KEY_RING} --from-literal region=${REGION} --from-literal crypto-key=${CRYPTO_KEY}
