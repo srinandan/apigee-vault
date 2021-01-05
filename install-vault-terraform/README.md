@@ -80,3 +80,13 @@ Vault is now ready to use. Note the `Initial Root Token` this will be necessary 
 The terraform script does request a static ip, but does **not** create a DNS entry for it. It is recommended that one creates a DNS entry for the static ip.
 
 Create a jump host VM to operate Vault.
+
+## Clean up
+
+If you don't wish to destroy the Cloud KMS key, clean up individual components
+
+```bash
+terraform destroy -target=google_container_cluster.vault
+terraform destroy -target=google_compute_address.internal_address
+terraform destroy -target=google_storage_bucket.vault
+```
