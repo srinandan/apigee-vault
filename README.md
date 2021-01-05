@@ -4,7 +4,9 @@ This repo explores some strategies for managing secrets for use with [Apigee hyb
 
 ## Instructions
 
-* [Install vault](./install-vault)
+* Install vault
+  * [Using Scripts](./install-vault)
+  * [Using Terraform](./install-vault-terraform)
 * [Sample using vault agent](./vault-agent-sample)
 * [Sample using External Secrets](./ext-secret-sample)
 
